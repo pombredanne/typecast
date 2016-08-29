@@ -1,3 +1,4 @@
+import re
 import six
 import sys
 import decimal
@@ -7,14 +8,20 @@ from typecast.converter import Converter, ConverterError
 
 
 class String(Converter):
-    """ String """
+    """String."""
+
     result_type = six.text_type
+    jts_name = 'string'
+    guess_score = 1
     allow_empty = True
 
 
 class Integer(Converter):
-    """ Integer """
+    """Integer."""
+
     result_type = int
+    jts_name = 'integer'
+    guess_score = 6
 
     def _cast(self, value, **opts):
         try:
@@ -29,9 +36,15 @@ class Integer(Converter):
 
 
 class Boolean(Converter):
-    """ A boolean field. Matches true/false, yes/no and 0/1 by default,
-    but a custom set of values can be optionally provided. """
+    """A boolean field.
+
+    Matches true/false, yes/no and 0/1 by default,
+    but a custom set of values can be optionally provided.
+    """
+
     result_type = bool
+    jts_name = 'boolean'
+    guess_score = 7
     true_values = ('t', 'yes', 'y', 'true', 'aye')
     false_values = ('f', 'no', 'n', 'false', 'nay')
 
@@ -52,8 +65,11 @@ class Boolean(Converter):
 
 
 class Float(Converter):
-    """ Floating-point number """
+    """Floating-point number."""
+
     result_type = float
+    jts_name = 'number'
+    guess_score = 3
 
     def _cast(self, value, **opts):
         return float(value)
@@ -66,8 +82,13 @@ class Float(Converter):
 
 
 class Decimal(Converter):
-    """ Decimal number, ``decimal.Decimal`` or float numbers. """
+    """Decimal number, ``decimal.Decimal`` or float numbers."""
+
     result_type = decimal.Decimal
+    jts_name = 'number'
+    guess_score = 3
+    pattern = r'\s*[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?\s*'
+    pattern = re.compile(pattern, re.M)
 
     def _stringify(self, value, **opts):
         return '{0:.7f}'.format(value)

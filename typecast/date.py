@@ -1,15 +1,19 @@
+import re
 import six
 import dateutil.parser
 from datetime import datetime, date
 
 from typecast.formats import DATE_FORMATS, DATETIME_FORMATS
-from typecast.formats import format_regex
+from typecast.formats import format_regex, make_regex
 from typecast.converter import Converter
 
 
 class DateTime(Converter):
-    """ Timestamp """
+    """Convert a timestamp."""
+
     result_type = datetime
+    jts_name = 'datetime'
+    guess_score = 5
     formats = DATETIME_FORMATS
 
     def __init__(self, format=None):
@@ -17,8 +21,9 @@ class DateTime(Converter):
         self.format = format
 
     def test(self, value):
+        """Apply the regex for this format."""
         if isinstance(value, six.string_types):
-            if len(value.strip()) == 0:
+            if not len(value.strip()):
                 return 0
             if format_regex(self.format):
                 match = format_regex(self.format).match(value)
@@ -29,10 +34,18 @@ class DateTime(Converter):
         return value.isoformat()
 
     def _cast(self, value, format=None, **opts):
-        """ Optionally apply a format string. """
+        """Optionally apply a format string."""
         if format is not None:
             return datetime.strptime(value, format)
         return dateutil.parser.parse(value)
+
+    @classmethod
+    def test_class(cls, value):
+        if not hasattr(cls, '_formats_re'):
+            formats = [make_regex(f) for f in cls.formats]
+            formats = '|'.join(formats)
+            cls._formats_re = re.compile('(%s)' % formats)
+        return cls._formats_re.match(value) is not None
 
     @classmethod
     def instances(cls):
@@ -52,8 +65,11 @@ class DateTime(Converter):
 
 
 class Date(DateTime):
-    """ Date """
+    """Convert a date."""
+
     result_type = date
+    jts_name = 'date'
+    guess_score = 4
     formats = DATE_FORMATS
 
     def _stringify(self, value, **opts):
